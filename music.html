@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style type="text/css">
+	body {
+		margin: 0px;
+	}
+	#mainGuitar {
+		position: absolute;
+	}
+</style>
+<script type="text/javascript">
+
+	Array.prototype.move = function(target, index) {
+		var e = this[target];
+		this.splice(target, 1);
+		this.splice(index, 0, e);
+		return (this);
+	}
+	Array.prototype.precision = function(p) {
+		for (var i = 0; i < this.length; i ++) {
+			if (typeof this[i] == "number") {
+				var f = 10 ** p
+				this[i] = Math.round(this[i] * f) / f;
+			}
+		}
+		return (this);
+	}
+	var customMethods = ["move", "precision"];
+	for (var m in customMethods) {
+		Object.defineProperty(Array.prototype, customMethods[m], {
+			enumerable: false,
+		});
+	}
+
+	const FPS = 1000/60;
+	var guitar = [];
+
+	function main() {
+
+	}
+
+	window.onload = () => {
+		setInterval(() => {main()}, FPS);
+		music.systemAdd("12-TET", 12, ["C", "D", "E", "F", "G", "A", "B"], [0, 2, 4, 5, 7, 9, 11], "equal", "16.351597831287414");
+		//music.systemAdd("TEST", 4, ["A", "B", "C", "D"], [0, 1, 2, 3], [1, 1.148698354997035, 1.4142135623730951, 1.8660659830736148], "15");
+		//music.systemAdd("12-T", 12, ["C", "D", "E", "F", "G", "A", "B"], [0, 2, 4, 5, 7, 9, 11], [1, 17/16, 18/16, 19/16, 20/16, 21/16, 22/16, 24/16, 25/16, 27/16, 28/16, 30/16], "16.351597831287414");
+
+
+		guitar.stringAdd(music.getFrequency(music.lettersToNotes("E"), 2, 0));
+		guitar.stringAdd(music.getFrequency(music.lettersToNotes("A"), 2, 0));
+		guitar.stringAdd(music.getFrequency(music.lettersToNotes("D"), 3, 0));
+		guitar.stringAdd(music.getFrequency(music.lettersToNotes("G"), 3, 0));
+		guitar.stringAdd(music.getFrequency(music.lettersToNotes("B"), 3, 0));
+		guitar.stringAdd(music.getFrequency(music.lettersToNotes("E"), 4, 0));
+
+		guitar.fretAdd(0, music.IF("f", {i:[...music.shiftRelative(music.system[0].interval, 1, 24, 0)], o:guitar.string[0].fret[0], t:music.system[0].tones}));
+		guitar.fretAdd(1, music.IF("f", {i:[...music.shiftRelative(music.system[0].interval, 1, 24, 0)], o:guitar.string[1].fret[0], t:music.system[0].tones}));
+		guitar.fretAdd(2, music.IF("f", {i:[...music.shiftRelative(music.system[0].interval, 1, 24, 0)], o:guitar.string[2].fret[0], t:music.system[0].tones}));
+		guitar.fretAdd(3, music.IF("f", {i:[...music.shiftRelative(music.system[0].interval, 1, 24, 0)], o:guitar.string[3].fret[0], t:music.system[0].tones}));
+		guitar.fretAdd(4, music.IF("f", {i:[...music.shiftRelative(music.system[0].interval, 1, 24, 0)], o:guitar.string[4].fret[0], t:music.system[0].tones}));
+		guitar.fretAdd(5, music.IF("f", {i:[...music.shiftRelative(music.system[0].interval, 1, 24, 0)], o:guitar.string[5].fret[0], t:music.system[0].tones}));
+
+		music.scaleAdd([0, 2, 4, 5, 7, 9, 11]);	
+		
+	}
+	
+	var guitar = {
+		string: [],
+		stringAdd: (frequency) => {
+			guitar.string.push({
+				fret: [frequency],
+			});
+		},
+		fretAdd: (string, frequency) => {
+			var dataType = typeof frequency;
+			typeof frequency != "object" ? frequency = [frequency] : {};
+			var g = guitar.string[string];
+			g.fret.push(...frequency);
+		},
+		GUI: {
+			boardHeight: 200,
+			boardWidth: 1500,
+			fretWidth: 4,
+
+			redraw: (mainGuitar) => {
+				var g = guitar.GUI;
+				var fretHeight = g.boardHeight / guitar.string.length;
+				for (var i = 0; i < guitar.string.length; i ++) {
+					for (var j = 0; j < guitar.string[i].fret.length; j ++) {
+						var left = music.PF("p", {f:guitar.string[i].fret, o:guitar.string[i].fret[0], w:g.boardWidth});///
+						var f = document.getElementById("fretS" + i + "F" + j);
+						if (f == null) {
+							f = document.createElement("div");
+							f.id = "fretS" + i + "F" + j;
+							f.style.border = "1px solid black";
+							f.style.position = "absolute";
+							f.style.boxSizing = "border-box";
+						}
+						f.style.width = Math.round(g.fretWidth) + "px";
+						f.style.height = Math.round(fretHeight) + "px";
+
+						f.style.left = Math.round(left[j]) + "px";///
+						f.style.top = Math.round(fretHeight * i) + "px";
+
+						mainGuitar.appendChild(f);
+						//guitar.GUI.redraw(document.getElementById("mainGuitar"))
+					}
+				}
+			}
+		}
+	}
+	var music = {
+		scale: [],		
+		scaleAdd: (notes) => {
+			var r = [];
+			for (var i = 0; i < notes.length; i++) {if (r.find((v) => {return v == notes[i]}) == undefined) {r.push(notes[i]);}}
+				music.scale.push(r);
+		},
+		system: [],
+		systemAdd: (name = "12-TET", tones = 12, letters = ["C", "D", "E", "F", "G", "A", "B"], relation = [0, 2, 4, 5, 7, 9, 11], temperament = "equal", rootFrequency = "16.351597831287414") => {		
+			var temperament = (new Array(tones).fill(0)).map((v, i) => {
+				if (temperament == "equal") {
+					return (music.IF("f", {i: i, o: 1, t: tones}));
+				} else {
+					return (temperament[i]);}
+				});
+			music.system.push({
+				name: name,
+				tones: tones,
+				letters: letters,
+				relation: relation,
+				temperament: temperament,
+				rootFrequency: rootFrequency,
+				interval: music.IF("i", {o: 1, f: temperament, t: tones}),
+			});
+		},
+
+		notesToSteps: (note, tones = 12) => {
+			note = music.normalizeNotes(note, tones);
+			var size = [];
+			for (var i = 0; i < note.length; i ++) {
+				var n = i + 1; if (n >= note.length) {n -= note.length;}
+				if (note[i] > note[n]) {note[n] += tones;}
+				size[i] = Math.abs(note[n] - note[i]);
+			}
+			return (size);
+		},
+		stepsToNotes: (step, rootNote = 0, system = 0, sharp = "#", flat = "b") => {
+			rootNote = (music.lettersToNotes(rootNote, system, sharp, flat));
+			var r = [rootNote];
+			if (typeof step != "object") {step = [step];}
+			for (var i = 1; i < step.length; i ++) {
+				r[i] = r[i - 1] + step[i - 1];
+			}
+			return (music.normalizeNotes(r, music.system[system].tones));
+		}, 
+		normalizeSteps: (steps) => {
+			var min = Math.min(...steps);
+			var index = [];
+			var size = []
+			steps.map((v, i) => {if (v == min) {index.push(i);}});
+			for (var i = 0; i < index.length - 1; i ++) {
+				size.push(index[i + 1] - index[i]);
+			}
+			size.push(index[0] + steps.length - index[index.length - 1]);
+			var min = Math.min(...size);
+			var first;
+			for (var i = size.length - 1; i > 0; i --) {
+				if (size[i] == min && first == undefined) {first = i;}
+				if (first != undefined) {if (size[i] == min && size[i - 1] == min) {first = i - 1;}}
+			}
+			return music.shiftMode(steps,index[first]);
+		},
+
+		lettersToNotes: (letter, system = 0, sharp = "#", flat = "b") => {
+			var dataType = typeof letter;
+			typeof letter != "object" ? letter = [letter] : {};
+			var s = music.system[system];
+			var rs = new RegExp(sharp, "g");
+			var rf = new RegExp(flat, "g");
+			var r = [];
+			for (var i = 0; i < letter.length; i ++) {
+				if (typeof letter[i]!="number") {
+					r.push(
+						music.normalizeNotes(
+							(letter[i].split(sharp).length - letter[i].split(flat).length) + 
+							s.relation[s.letters.findIndex((v) => {return v == letter[i].replace(rs, "").replace(rf, "")})], 
+							s.tones
+							)
+						);
+				} else {
+					r.push(music.normalizeNotes(letter[i], s.tones));
+				}
+			}
+			return (dataType == "object" ? r : r[0]);
+		},
+		notesToLetters: (note, system = 0, accidental = "s", sharp = "#", flat = "b") => { // s = nearest rounded to sharp, f = nearest rounded to flat, os = only in sharp, of = only in sharp
+			var dataType = typeof note;
+			typeof note != "object" ? note = [note] : {};
+			var s = music.system[system];
+			note = music.normalizeNotes(note, s.tones);
+			var l = []; var ds = []; var df = [];
+			s.relation.reverse();
+			for (var i = 0; i < note.length; i ++) {
+				var rl = (s.relation.length - 1) - s.relation.findIndex((v2) => {return note[i] >= v2;});
+				l.push(rl);
+			}
+			s.relation.reverse();
+			for (var i = 0; i < note.length; i ++) {
+				ds.push(note[i] - s.relation[l[i]]);
+				df.push((l[i] + 1) == s.relation.length ? s.tones - note[i] : s.relation[l[i] + 1] - note[i]);
+			}
+			var r = new Array(note.length);
+			var ra = new Array(note.length);
+			switch (accidental) {
+				case ("s"):
+				for (var i = 0; i < note.length; i ++) {
+					if (ds[i] <= df[i]) {
+						r[i] = s.letters[l[i]]; ra[i] = 0;
+					} else {
+						r[i] = (l[i] + 1) == s.relation.length ? s.letters[0] : s.letters[l[i] + 1];
+						ra[i] = 1;
+					}
+				}
+				break;
+				case ("f"):
+				for (var i = 0; i < note.length; i ++) {
+					if (df[i] <= ds[i]) {
+						r[i] = (l[i] + 1) == s.relation.length ? s.letters[0] : s.letters[l[i] + 1];
+						ra[i] = 1
+					} else {
+						r[i] = s.letters[l[i]];
+						ra[i] = 0;
+					}
+				}
+				break;
+				case ("os"):
+				for (var i = 0; i < note.length; i ++) {
+					r[i] = s.letters[l[i]]; ra[i] = 0;
+				}
+				break;
+				case ("of"):
+				for (var i = 0; i < note.length; i ++) {
+					if (ds[i] == 0) {
+						r[i] = s.letters[l[i]]; ra[i] = 0;
+					} else {
+						r[i] = (l[i] + 1) == s.relation.length ? s.letters[0] : s.letters[l[i] + 1];
+						ra[i] = 1;
+					}
+				}
+				break;
+			}
+			for (var i = 0; i < note.length; i ++) {
+				if (ra[i] == 1) {
+					r[i] = r[i] + (flat).repeat(df[i]);
+				} else {
+					r[i] = r[i] + (sharp).repeat(ds[i]);
+				}
+			}
+			return (dataType == "object" ? r : r[0]);
+		},
+		normalizeNotes: (note, tones = 12) => {
+			var dataType = typeof note;
+			if (typeof note != "object") {note = [note];}
+			for (var i = 0; i < note.length; i ++) {
+				if (note[i] > tones - 1) {note[i] -= tones * Math.floor(note[i] / tones);}
+				if (note[i] < 0) {note[i] += tones * Math.ceil(Math.abs(note[i]) / tones);}
+			}
+			return (dataType == "object" ? note : note[0]);
+		},
+		sortNotes: (note) => {
+			return note.sort((a, b) => {return (a - b);});
+		},
+		shiftMode: (note, shift = 1) => {
+			var reverse = false;
+			if (shift < 0) {reverse = true;}
+			shift = Math.abs(shift);
+			if (reverse) {note.reverse();}
+			for (; shift > 0; shift --) {
+				var p = note.shift();
+				note.push(p);
+			}
+			if (reverse) {note.reverse();}
+			return (note);
+		},
+		shiftTone: (note, shift = 1, tones = 12) => {//note = music.lettersToNotes(note);
+			var dataType = typeof note;
+			typeof note != "object" ? note = [note] : {};
+			var r = (music.normalizeNotes(note.map(function (a) {return (a + shift);}), tones));
+			return (dataType == "object" ? r : r[0]);
+		},
+		shiftRelative: (intervals, from = 0, to = 12, shift = 1) => {
+			var relatives = music.notesToSteps(music.shiftMode(new Array(...intervals), -1), intervals.length);
+			var part = [];
+			for (var i = from + 1; i <= to; i ++) {
+				part.push(relatives[i % relatives.length]);
+			}
+			part = music.shiftMode(part, shift);
+			var origin = intervals[from % relatives.length] + Math.floor(from / relatives.length) * relatives.length;
+			part.unshift(origin);
+			for (var i = 1; i < part.length; i ++) {
+				part[i] += part[i - 1];
+			}
+			return (part);
+			
+		},
+		IF: (x, p) => { // f = frequency, i = interval, o = opening frequency, t = tones
+			typeof p.i != "object" ? p.i = [p.i] : {};
+			typeof p.f != "object" ? p.f = [p.f] : {};
+			var r;
+			switch (x) {
+				case ("f"):
+				r = ((new Array(p.i.length)).fill(0).map((v, i) => {return ((2 ** (p.i[i] / p.t)) * p.o);}));	
+				break;
+				case ("i"):
+				r = ((new Array(p.f.length)).fill(0).map((v, i) => {return ((p.t * Math.log(p.f[i] / p.o)) / Math.log(2));}));
+				break;
+				case ("o"):
+				r = ((new Array(p.f.length)).fill(0).map((v, i) => {return ((p.f[i])) / (2 ** (p.i[i] / p.t));})); 
+				break;
+				case ("t"):
+				r = ((new Array(p.f.length)).fill(0).map((v, i) => {return ((p.i[i] * Math.log(2)) / Math.log(p.f[i] / p.o));}));
+				break;
+			}
+			return (r.length == 1 ? r[0] : r);
+		},
+		PF: (x, p) => { // p = position, f = frequency, o = open frequency, w = total width
+			typeof p.f != "object" ? p.f = [p.f] : {};
+			typeof p.p != "object" ? p.p = [p.p] : {};
+			var r;
+			switch (x) {
+				case ("p"):
+				r = ((new Array(p.f.length)).fill(0).map((v, i) => {return (p.w - (p.w * p.o) / (p.f[i]));}));		
+				break;
+				case ("f"):
+				r = ((new Array(p.p.length)).fill(0).map((v, i) => {return ((p.w * p.o) / (p.w - p.p[i]));}));
+				break;
+				case ("o"):
+				r = ((new Array(p.p.length)).fill(0).map((v, i) => {return ((p.f[i] * (p.p[i] - p.w) / -p.w));})); 
+				break;
+				case ("w"):
+				r = ((new Array(p.p.length)).fill(0).map((v, i) => {return ((p.f[i] * p.p[i]) / (p.f[i] - p.o));}));
+				break;
+			}
+			return (r.length == 1 ? r[0] : r);	
+		},
+		getNotation: (system, frequency, precision = 8) => {
+			var s = music.system[system];
+			var octave = 0;
+			var f = frequency;
+			var rf = s.rootFrequency;
+			while (f > rf * 2) {f *= 0.5; octave ++;}
+			var interval = Math.round(music.IF("i", {o: rf, f: f, t: s.tones}) * (10 ** precision)) / (10 ** precision);
+			if (interval >= s.tones - 0.5) {interval -= s.tones;}
+			var near = [s.tones, 0];
+			for (var i = 0; i < s.tones; i ++) {
+				if (Math.abs(interval - s.interval[i]) < near[0]) {near = [Math.abs(interval - s.interval[i]), i];}
+			}
+			var p = 10 ** precision;
+			return [near[1], octave, Math.round(near[0] * p) / p];
+		},
+		getFrequency: (note, octave, interval, system = 0, precision = 8) => {
+			var s = music.system[system];
+			var p = 10 ** precision;
+			return (Math.round(music.IF("f", {i: s.interval[note] + interval + octave * s.tones, t: s.tones, o: s.rootFrequency}) * p) / p);
+		}
+	}
+
+</script>
+</head>
+<body>
+	<div id="mainGuitar"></div>
+</body>	
+</html>
